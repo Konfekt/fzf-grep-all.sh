@@ -9,8 +9,10 @@ The shell scripts `fzf-grep-all.bash` / `fzf-grep-all.zsh` set up
 
 - key bindings `Alt-G` and `Control-G` in `Bash` and `ZSH` to insert, at the cursor position, the path of a file that contains a word fuzzily searched for (using [fzf](https://github.com/junegunn/fzf))
 
-    - among all text files (when `Alt-G` was hit) using a search tool such as [rg (ripgrep)](https://github.com/BurntSushi/ripgrep), [ag (The Silver Searcher)](https://github.com/ggreer/the_silver_searcher) or `(git) grep`
+    - among all text files (when `Alt-G` was hit) using a search tool such as [rg (ripgrep)](https://github.com/BurntSushi/ripgrep), [ugrep](https://github.com/Genivia/ugrep) or `(git) grep`
     - among all document files such as `PDFs`, `Microsoft Word/Powerpoint/Excel` files, ... (when `Control-G` was hit) using [rga](https://github.com/phiresky/ripgrep-all)
+
+Note that, while `ugrep` can search such document files by its [--filter` option](https://github.com/Genivia/ugrep#filter), it is [not meant to be used for indexing](https://github.com/Genivia/ugrep/commit/8702bf6d4bfe28716a502671dba7ebadbb48a93e#diff-2281406f4ec5b9dc1a741e569ba4f9735100ee2afeea8a19fa315db802ea24cd).
 
 # Installation
 

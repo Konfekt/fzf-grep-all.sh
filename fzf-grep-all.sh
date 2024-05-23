@@ -5,7 +5,8 @@ command -v fzf >/dev/null 2>&1 || return
 FZF_DEFAULT_OPTS="$FZF_DEFAULT_OPTS --height ${FZF_TMUX_HEIGHT:-90%}
   --info=inline --keep-right
   --bind=ctrl-l:accept,ctrl-u:kill-line,change:top,alt-j:preview-page-down,alt-k:preview-page-up
-  --bind=ctrl-z:ignore"
+  --bind=ctrl-z:ignore
+  --bind='ctrl-/:change-preview-window(down,50%,border-top|hidden|)'"
 
 # Check which clipboard tool is installed.
 if command -v xsel >/dev/null 2>&1; then
@@ -22,16 +23,25 @@ fi
 
 export FZF_DEFAULT_OPTS
 
+export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
+
+# if  command -v rg >/dev/null 2>&1 && [ ! -f "$XDG_CONFIG_HOME/ripgrep/ignore" ]; then
+#   mkdir -p "$XDG_CONFIG_HOME/ripgrep"
+#   echo -e "# repos\n.git/\n.bzr/\n_darcs/\nCVS/\n.svn/\n.hg" > "$XDG_CONFIG_HOME/ripgrep/ignore"
+# fi
+
 if command -v rg >/dev/null 2>&1; then
-  FZF_GREP_COMMAND="rg --smart-case --line-number --no-heading --hidden --iglob '!.{git,hg,bzr,svn}/' --no-messages --"
-elif command -v ag >/dev/null 2>&1; then
-  FZF_GREP_COMMAND="ag --line-number --no-heading --hidden --ignore .git/ --silent"
+  FZF_GREP_COMMAND="rg --smart-case --line-number --no-heading ---hidden --iglob '!.git/' --no-ignore --no-messages --"
+elif command -v ugrep >/dev/null 2>&1; then
+  FZF_GREP_COMMAND="ugrep -R -n --ignore-binary --smart-case --exclude-dir=.git --no-messages --"
 else
-  FZF_GREP_COMMAND="command grep --recursive --exclude-dir=.git"
+  FZF_GREP_COMMAND="command grep -r -n --exclude-dir=.git"
 fi
 
 if command -v rg > /dev/null; then
   FZF_PREVIEWER="[ ! -z {} ] && rg --pretty --context 3 -- {q} {1}"
+elif command -v ugrep > /dev/null; then
+  FZF_PREVIEWER="[ ! -z {} ] && ugrep --pretty --context 3 -- {q} {1}"
 elif command -v bat > /dev/null; then
   FZF_PREVIEWER="bat --color=always --style=${BAT_STYLE:-numbers} --pager=never --highlight-line {2} -- {1}"
 else
@@ -55,8 +65,8 @@ fzf_grep() {
     FZF_DEFAULT_OPTS="$FZF_GREP_OPTS" \
       fzf --sort \
         --disabled --query="$1" \
-        --bind "change:reload:$GREP_PREFIX {q}" \
-        --delimiter ':'
+        --bind="change:reload:$GREP_PREFIX {q}" \
+        --delimiter=':'
   )" &&
     file=${result%%:*} &&
     printf '%q ' "$file"  # escape special chars
@@ -70,8 +80,8 @@ fs() {
     FZF_DEFAULT_OPTS="$FZF_GREP_OPTS" \
       fzf --sort \
         --disabled --query="$1" \
-        --bind "change:reload:$GREP_PREFIX {q}" \
-        --delimiter ':'
+        --bind="change:reload:$GREP_PREFIX {q}" \
+        --delimiter=':'
   )" &&
     file=${result%%:*}
 
@@ -84,11 +94,16 @@ fs() {
 
 command -v rga >/dev/null 2>&1 || return
 
-export FZF_RGA_COMMAND="rga --smart-case --hidden --no-ignore --iglob '!.{git,hg,bzr,svn}/' --files-with-matches --"
+# if  command -v rga >/dev/null 2>&1 && [ ! -f "$XDG_CONFIG_HOME/ripgrep-all/ignore" ]; then
+#   mkdir -p "$XDG_CONFIG_HOME/ripgrep-all"
+#   echo -e "# repos\n.git/\n.bzr/\n_darcs/\nCVS/\n.svn/\n.hg" > "$XDG_CONFIG_HOME/ripgrep-all/ignore"
+# fi
+
+export FZF_RGA_COMMAND="rga --smart-case --hidden --no-ignore --iglob '!.git/' --files-with-matches --"
 
 # From https://github.com/phiresky/ripgrep-all/wiki/fzf-Integration
 fzf_rga() {
-  RGA_PREFIX="${FZF_RGA_COMMAND:-rga --smart-case --hidden --no-ignore --iglob \!.\{git,hg,bzr,svn\}/ --files-with-matches --} 2> /dev/null"
+  RGA_PREFIX="${FZF_RGA_COMMAND:-rga --smart-case --hidden --iglob '!.git/' --no-ignore --files-with-matches --} 2> /dev/null"
   PREVIEWER='[ ! -z {} ] && rga --pretty --context 3 {q} {}'
 
   local result
@@ -97,14 +112,14 @@ fzf_rga() {
     FZF_DEFAULT_OPTS="$FZF_GREP_OPTS" \
       fzf --sort --preview="$PREVIEWER" \
         --disabled --query="$1" \
-        --bind "change:reload:$RGA_PREFIX {q}" \
+        --bind="change:reload:$RGA_PREFIX {q}" \
         --preview-window="70%:wrap"
   )" &&
     file=${result%%:*} &&
     printf '%q ' "$file"  # escape special chars
 }
 fo() {
-  RGA_PREFIX="${FZF_RGA_COMMAND:-rga --smart-case --hidden --no-ignore --iglob \!.\{git,hg,bzr,svn\}/ --files-with-matches --} 2> /dev/null"
+  RGA_PREFIX="${FZF_RGA_COMMAND:-rga --smart-case --hidden --iglob '!.git/' --no-ignore --files-with-matches --} 2> /dev/null"
   PREVIEWER='[ ! -z {} ] && rga --pretty --context 3 {q} {}'
 
   local result
@@ -113,7 +128,7 @@ fo() {
     FZF_DEFAULT_OPTS="$FZF_GREP_OPTS" \
       fzf --sort --preview="$PREVIEWER" \
         --disabled --query="$1" \
-        --bind "change:reload:$RGA_PREFIX {q}" \
+        --bind="change:reload:$RGA_PREFIX {q}" \
         --preview-window="70%:wrap"
   )"
   if [ -f "$result" ]; then
